@@ -13,7 +13,7 @@ vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
 floppya: 1_44=boot.bin, status=inserted
 
 # choose the boot disk.
-boot: floppy
+boot: a
 
 # where do we send log messages?
 # log: bochsout.txt
