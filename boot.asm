@@ -22,6 +22,6 @@ DispStr:
 	mov	dl, 0
 	int	10h		
 	ret
-BootMessage:		db	"Welcome to Use Jary-li operate system"
+BootMessage:		db	"Welcome to my OS"
 times 	510-($-$$)	db	0
 dw 	0xaa55			  
