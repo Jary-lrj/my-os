@@ -5,7 +5,6 @@
 ;                                                     Forrest Yu, 2005
 ; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
 org  0100h
 
 	jmp	LABEL_START		; Start
@@ -202,8 +201,8 @@ dwKernelSize		dd	0		; KERNEL.BIN 文件大小
 KernelFileName		db	"KERNEL  BIN", 0	; KERNEL.BIN 之文件名
 ; 为简化代码, 下面每个字符串的长度均为 MessageLength
 MessageLength		equ	9
-LoadMessage:		db	"Loading  "
-Message1		db	"Ready.   "
+LoadMessage:		db	"Loading K"
+Message1		db	"K's Ready"
 Message2		db	"No KERNEL"
 ;============================================================================
 
@@ -750,7 +749,7 @@ LABEL_DATA:
 ; 实模式下使用这些符号
 ; 字符串
 _szMemChkTitle:			db	"BaseAddrL BaseAddrH LengthLow LengthHigh   Type", 0Ah, 0
-_szRAMSize:			db	"RAM size:", 0
+_szRAMSize:			db	"Jary-lrj's Personal OS RAM size:", 0
 _szReturn:			db	0Ah, 0
 ;; 变量
 _dwMCRNumber:			dd	0	; Memory Check Result
