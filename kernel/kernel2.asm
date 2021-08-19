@@ -27,7 +27,7 @@ extern	k_reenter
 bits 32
 
 [SECTION .data]
-clock_int_msg		db	"+", 0
+clock_int_msg		db	"^", 0
 
 [SECTION .bss]
 StackSpace		resb	2 * 1024
@@ -182,9 +182,9 @@ hwint00:		; Interrupt routine for irq 0 (the clock).
 	call	disp_str
 	add	esp, 4
 
-;;; 	push	1
-;;; 	call	delay
-;;; 	add	esp, 4
+	push	1
+	call	delay
+	add	esp, 4
 	
 	cli
 	

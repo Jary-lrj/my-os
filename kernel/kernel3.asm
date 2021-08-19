@@ -27,7 +27,7 @@ extern	k_reenter
 bits 32
 
 [SECTION .data]
-clock_int_msg		db	"+", 0
+clock_int_msg		db	"^", 0
 
 [SECTION .bss]
 StackSpace		resb	2 * 1024

@@ -22,12 +22,11 @@ extern	idt_ptr
 extern	p_proc_ready
 extern	tss
 extern	disp_pos
-extern	k_reenter
 
 bits 32
 
 [SECTION .data]
-clock_int_msg		db	"+", 0
+clock_int_msg		db	"^", 0
 
 [SECTION .bss]
 StackSpace		resb	2 * 1024
@@ -164,17 +163,13 @@ hwint00:		; Interrupt routine for irq 0 (the clock).
 	mov	dx, ss
 	mov	ds, dx
 	mov	es, dx
+	
+	mov	esp, StackTop		; 切到内核栈
 
 	inc	byte [gs:0]		; 改变屏幕第 0 行, 第 0 列的字符
 
 	mov	al, EOI			; `. reenable
 	out	INT_M_CTL, al		; /  master 8259
-
-	inc	dword [k_reenter]
-	cmp	dword [k_reenter], 0
-	jne	.re_enter
-	
-	mov	esp, StackTop		; 切到内核栈
 
 	sti
 	
@@ -182,9 +177,9 @@ hwint00:		; Interrupt routine for irq 0 (the clock).
 	call	disp_str
 	add	esp, 4
 
-;;; 	push	1
-;;; 	call	delay
-;;; 	add	esp, 4
+	push	1
+	call	delay
+	add	esp, 4
 	
 	cli
 	
@@ -193,8 +188,6 @@ hwint00:		; Interrupt routine for irq 0 (the clock).
 	lea	eax, [esp + P_STACKTOP]
 	mov	dword [tss + TSS3_S_SP0], eax
 
-.re_enter:	; 如果(k_reenter != 0)，会跳转到这里
-	dec	dword [k_reenter]
 	pop	gs	; `.
 	pop	fs	;  |
 	pop	es	;  | 恢复原寄存器值
