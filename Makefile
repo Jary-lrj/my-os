@@ -24,32 +24,19 @@ DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 # This Program
 ORANGESBOOT	= boot/boot.bin boot/loader.bin
 ORANGESKERNEL	= kernel.bin
-OBJS		= kernel/kernel.o kernel/start.o kernel/main.o\
-			kernel/i8259.o kernel/global.o kernel/protect.o\
+OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o\
+			kernel/clock.o kernel/keyboard.o kernel/tty.o kernel/console.o\
+			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
+			kernel/printf.o kernel/vsprintf.o\
 			lib/kliba.o lib/klib.o lib/string.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
-.PHONY : everything final image clean realclean disasm all buildimg stage1 stage2 stage3 stage4 one two three four five lastone
+.PHONY : everything final image clean realclean disasm all buildimg
 
 # Default starting position
 nop :
-	@echo "make stage1|stage2|stage3"
-
-stage1 : one image
-
-stage2 : two image
-
-stage3 : three image
-
-one :
-	cp kernel/kernel1.asm kernel/kernel.asm
-
-two :
-	cp kernel/kernel2.asm kernel/kernel.asm
-
-three :
-	cp kernel/kernel3.asm kernel/kernel.asm
+	@echo "why not \`make image' huh? :)"
 
 everything : $(ORANGESBOOT) $(ORANGESKERNEL)
 
@@ -70,8 +57,8 @@ disasm :
 buildimg :
 	dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
 	sudo mount -o loop a.img /mnt
-	sudo cp boot/loader.bin /mnt
-	sudo cp kernel.bin /mnt
+	sudo cp -fv boot/loader.bin /mnt
+	sudo cp -fv kernel.bin /mnt
 	sudo umount /mnt
 
 boot/boot.bin : boot/boot.asm boot/include/load.inc boot/include/fat12hdr.inc
@@ -86,6 +73,9 @@ $(ORANGESKERNEL) : $(OBJS)
 kernel/kernel.o : kernel/kernel.asm include/sconst.inc
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
+kernel/syscall.o : kernel/syscall.asm include/sconst.inc
+	$(ASM) $(ASMKFLAGS) -o $@ $<
+
 kernel/start.o: kernel/start.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
 			include/global.h
 	$(CC) $(CFLAGS) -o $@ $<
@@ -93,6 +83,18 @@ kernel/start.o: kernel/start.c include/type.h include/const.h include/protect.h 
 kernel/main.o: kernel/main.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
 			include/global.h
 	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/clock.o: kernel/clock.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/console.o: kernel/console.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/keyboard.o: kernel/keyboard.c
+	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
+	
+kernel/tty.o: kernel/tty.c
+	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
 
 kernel/i8259.o: kernel/i8259.c include/type.h include/const.h include/protect.h include/proto.h
 	$(CC) $(CFLAGS) -o $@ $<
@@ -104,6 +106,15 @@ kernel/global.o: kernel/global.c include/type.h include/const.h include/protect.
 kernel/protect.o: kernel/protect.c include/type.h include/const.h include/protect.h include/proc.h include/proto.h \
 			include/global.h
 	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
+
+kernel/proc.o: kernel/proc.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/printf.o: kernel/printf.c
+	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
+
+kernel/vsprintf.o: kernel/vsprintf.c
+	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<	
 
 lib/klib.o: lib/klib.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
 			include/global.h

@@ -5,6 +5,7 @@
 ;                                                     Forrest Yu, 2005
 ; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
 org  0100h
 
 	jmp	LABEL_START		; Start
@@ -749,7 +750,7 @@ LABEL_DATA:
 ; 实模式下使用这些符号
 ; 字符串
 _szMemChkTitle:			db	"BaseAddrL BaseAddrH LengthLow LengthHigh   Type", 0Ah, 0
-_szRAMSize:			db	"Jary-lrj's Personal OS RAM size:", 0
+_szRAMSize:			db	"Jary-lrj's OS RAM size:", 0
 _szReturn:			db	0Ah, 0
 ;; 变量
 _dwMCRNumber:			dd	0	; Memory Check Result

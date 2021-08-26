@@ -1,6 +1,6 @@
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            klib.c
+                               clock.c
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                                     Forrest Yu, 2005
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -8,70 +8,56 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
-#include "tty.h"
-#include "console.h"
 #include "string.h"
 #include "proc.h"
+#include "tty.h"
+#include "console.h"
 #include "global.h"
 #include "proto.h"
 
 
 /*======================================================================*
-                               itoa
+                           clock_handler
  *======================================================================*/
-PUBLIC char * itoa(char * str, int num)/* 数字前面的 0 不被显示出来, 比如 0000B800 被显示成 B800 */
+PUBLIC void clock_handler(int irq)
 {
-	char *	p = str;
-	char	ch;
-	int	i;
-	int	flag = 0;
+	ticks++;
+	p_proc_ready->ticks--;
 
-	*p++ = '0';
-	*p++ = 'x';
-
-	if(num == 0){
-		*p++ = '0';
-	}
-	else{	
-		for(i=28;i>=0;i-=4){
-			ch = (num >> i) & 0xF;
-			if(flag || (ch > 0)){
-				flag = 1;
-				ch += '0';
-				if(ch > '9'){
-					ch += 7;
-				}
-				*p++ = ch;
-			}
-		}
+	if (k_reenter != 0) {
+		return;
 	}
 
-	*p = 0;
+	if (p_proc_ready->ticks > 0) {
+		return;
+	}
 
-	return str;
-}
+	schedule();
 
-
-/*======================================================================*
-                               disp_int
- *======================================================================*/
-PUBLIC void disp_int(int input)
-{
-	char output[16];
-	itoa(output, input);
-	disp_str(output);
 }
 
 /*======================================================================*
-                               delay
+                              milli_delay
  *======================================================================*/
-PUBLIC void delay(int time)
+PUBLIC void milli_delay(int milli_sec)
 {
-	int i, j, k;
-	for(k=0;k<time;k++){
-		/*for(i=0;i<10000;i++){	for Virtual PC	*/
-		for(i=0;i<10;i++){/*	for Bochs	*/
-			for(j=0;j<10000;j++){}
-		}
-	}
+        int t = get_ticks();
+
+        while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
 }
+
+/*======================================================================*
+                           init_clock
+ *======================================================================*/
+PUBLIC void init_clock()
+{
+        /* 初始化 8253 PIT */
+        out_byte(TIMER_MODE, RATE_GENERATOR);
+        out_byte(TIMER0, (u8) (TIMER_FREQ/HZ) );
+        out_byte(TIMER0, (u8) ((TIMER_FREQ/HZ) >> 8));
+
+        put_irq_handler(CLOCK_IRQ, clock_handler);    /* 设定时钟中断处理程序 */
+        enable_irq(CLOCK_IRQ);                        /* 让8259A可以接收时钟中断 */
+}
+
+
