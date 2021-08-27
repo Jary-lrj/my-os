@@ -6,11 +6,13 @@
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 #include "type.h"
+#include "stdio.h"
 #include "const.h"
 #include "protect.h"
 #include "tty.h"
 #include "console.h"
 #include "string.h"
+#include "fs.h"
 #include "proc.h"
 #include "global.h"
 #include "proto.h"
@@ -407,6 +409,7 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m)
 		return 0;
 	}
 
+
 	/* Arrives here if no interrupt for p_who_wanna_recv. */
 	if (src == ANY) {
 		/* p_who_wanna_recv is ready to receive messages from
@@ -497,7 +500,6 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m)
 		p_from->p_msg = 0;
 		p_from->p_sendto = NO_TASK;
 		p_from->p_flags &= ~SENDING;
-
 		unblock(p_from);
 	}
 	else {  /* nobody's sending any msg */
@@ -518,6 +520,39 @@ PRIVATE int msg_receive(struct proc* current, int src, MESSAGE* m)
 	}
 
 	return 0;
+}
+
+/*****************************************************************************
+ *                                inform_int
+ *****************************************************************************/
+/**
+ * <Ring 0> Inform a proc that an interrupt has occured.
+ * 
+ * @param task_nr  The task which will be informed.
+ *****************************************************************************/
+PUBLIC void inform_int(int task_nr)
+{
+	struct proc* p = proc_table + task_nr;
+
+	if ((p->p_flags & RECEIVING) && /* dest is waiting for the msg */
+	    ((p->p_recvfrom == INTERRUPT) || (p->p_recvfrom == ANY))) {
+		p->p_msg->source = INTERRUPT;
+		p->p_msg->type = HARD_INT;
+		p->p_msg = 0;
+		p->has_int_msg = 0;
+		p->p_flags &= ~RECEIVING; /* dest has received the msg */
+		p->p_recvfrom = NO_TASK;
+		assert(p->p_flags == 0);
+		unblock(p);
+
+		assert(p->p_flags == 0);
+		assert(p->p_msg == 0);
+		assert(p->p_recvfrom == NO_TASK);
+		assert(p->p_sendto == NO_TASK);
+	}
+	else {
+		p->has_int_msg = 1;
+	}
 }
 
 /*****************************************************************************
@@ -558,7 +593,7 @@ PUBLIC void dump_proc(struct proc* p)
 	sprintf(info, "p_flags: 0x%x.  ", p->p_flags); disp_color_str(info, text_color);
 	sprintf(info, "p_recvfrom: 0x%x.  ", p->p_recvfrom); disp_color_str(info, text_color);
 	sprintf(info, "p_sendto: 0x%x.  ", p->p_sendto); disp_color_str(info, text_color);
-	sprintf(info, "nr_tty: 0x%x.  ", p->nr_tty); disp_color_str(info, text_color);
+	/* sprintf(info, "nr_tty: 0x%x.  ", p->nr_tty); disp_color_str(info, text_color); */
 	disp_color_str("\n", text_color);
 	sprintf(info, "has_int_msg: 0x%x.  ", p->has_int_msg); disp_color_str(info, text_color);
 }

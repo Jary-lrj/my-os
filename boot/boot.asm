@@ -57,15 +57,15 @@ LABEL_SEARCH_IN_ROOT_DIR_BEGIN:
 	cmp	word [wRootDirSizeForLoop], 0	; ┓
 	jz	LABEL_NO_LOADERBIN		; ┣ 判断根目录区是不是已经读完
 	dec	word [wRootDirSizeForLoop]	; ┛ 如果读完表示没有找到 LOADER.BIN
-	mov	ax, BaseOfLoader
-	mov	es, ax			; es <- BaseOfLoader
-	mov	bx, OffsetOfLoader	; bx <- OffsetOfLoader	于是, es:bx = BaseOfLoader:OffsetOfLoader
-	mov	ax, [wSectorNo]	; ax <- Root Directory 中的某 Sector 号
+	mov	ax, LOADER_SEG
+	mov	es, ax			; es <- LOADER_SEG
+	mov	bx, LOADER_OFF		; bx <- LOADER_OFF	于是, es:bx = LOADER_SEG:LOADER_OFF
+	mov	ax, [wSectorNo]		; ax <- Root Directory 中的某 Sector 号
 	mov	cl, 1
 	call	ReadSector
 
 	mov	si, LoaderFileName	; ds:si -> "LOADER  BIN"
-	mov	di, OffsetOfLoader	; es:di -> BaseOfLoader:0100 = BaseOfLoader*10h+100
+	mov	di, LOADER_OFF		; es:di -> LOADER_SEG:0100 = LOADER_SEG*10h+100
 	cld
 	mov	dx, 10h
 LABEL_SEARCH_FOR_LOADERBIN:
@@ -76,7 +76,7 @@ LABEL_SEARCH_FOR_LOADERBIN:
 LABEL_CMP_FILENAME:
 	cmp	cx, 0
 	jz	LABEL_FILENAME_FOUND	; 如果比较了 11 个字符都相等, 表示找到
-dec	cx
+	dec	cx
 	lodsb				; ds:si -> al
 	cmp	al, byte [es:di]
 	jz	LABEL_GO_ON
@@ -114,9 +114,9 @@ LABEL_FILENAME_FOUND:			; 找到 LOADER.BIN 后便来到这里继续
 	push	cx			; 保存此 Sector 在 FAT 中的序号
 	add	cx, ax
 	add	cx, DeltaSectorNo	; 这句完成时 cl 里面变成 LOADER.BIN 的起始扇区号 (从 0 开始数的序号)
-	mov	ax, BaseOfLoader
-	mov	es, ax			; es <- BaseOfLoader
-	mov	bx, OffsetOfLoader	; bx <- OffsetOfLoader	于是, es:bx = BaseOfLoader:OffsetOfLoader = BaseOfLoader * 10h + OffsetOfLoader
+	mov	ax, LOADER_SEG
+	mov	es, ax			; es <- LOADER_SEG
+	mov	bx, LOADER_OFF		; bx <- LOADER_OFF	于是, es:bx = LOADER_SEG:LOADER_OFF = LOADER_SEG * 10h + LOADER_OFF
 	mov	ax, cx			; ax <- Sector 号
 
 LABEL_GOON_LOADING_FILE:
@@ -147,7 +147,7 @@ LABEL_FILE_LOADED:
 	call	DispStr			; 显示字符串
 
 ; *****************************************************************************************************
-	jmp	BaseOfLoader:OffsetOfLoader	; 这一句正式跳转到已加载到内存中的 LOADER.BIN 的开始处
+	jmp	LOADER_SEG:LOADER_OFF	; 这一句正式跳转到已加载到内存中的 LOADER.BIN 的开始处
 						; 开始执行 LOADER.BIN 的代码
 						; Boot Sector 的使命到此结束
 ; *****************************************************************************************************
@@ -167,8 +167,8 @@ bOdd			db	0		; 奇数还是偶数
 LoaderFileName		db	"LOADER  BIN", 0	; LOADER.BIN 之文件名
 ; 为简化代码, 下面每个字符串的长度均为 MessageLength
 MessageLength		equ	9
-BootMessage:		db	"Booting L"; 9字节, 不够则用空格补齐. 序号 0
-Message1		db	"L's Ready"; 9字节, 不够则用空格补齐. 序号 1
+BootMessage:		db	"Booting  "; 9字节, 不够则用空格补齐. 序号 0
+Message1		db	"Ready.   "; 9字节, 不够则用空格补齐. 序号 1
 Message2		db	"No LOADER"; 9字节, 不够则用空格补齐. 序号 2
 ;============================================================================
 
@@ -246,8 +246,8 @@ GetFATEntry:
 	push	es
 	push	bx
 	push	ax
-	mov	ax, BaseOfLoader	; ┓
-	sub	ax, 0100h		; ┣ 在 BaseOfLoader 后面留出 4K 空间用于存放 FAT
+	mov	ax, LOADER_SEG	; ┓
+	sub	ax, 0100h		; ┣ 在 LOADER_SEG 后面留出 4K 空间用于存放 FAT
 	mov	es, ax			; ┛
 	pop	ax
 	mov	byte [bOdd], 0
@@ -264,7 +264,7 @@ LABEL_EVEN:;偶数
 	div	bx			; dx:ax / BPB_BytsPerSec  ==>	ax <- 商   (FATEntry 所在的扇区相对于 FAT 来说的扇区号)
 					;				dx <- 余数 (FATEntry 在扇区内的偏移)。
 	push	dx
-	mov	bx, 0			; bx <- 0	于是, es:bx = (BaseOfLoader - 100):00 = (BaseOfLoader - 100) * 10h
+	mov	bx, 0			; bx <- 0	于是, es:bx = (LOADER_SEG - 100):00 = (LOADER_SEG - 100) * 10h
 	add	ax, SectorNoOfFAT1	; 此句执行之后的 ax 就是 FATEntry 所在的扇区号
 	mov	cl, 2
 	call	ReadSector		; 读取 FATEntry 所在的扇区, 一次读两个, 避免在边界发生错误, 因为一个 FATEntry 可能跨越两个扇区
