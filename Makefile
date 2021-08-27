@@ -28,7 +28,8 @@ OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o\
 			kernel/clock.o kernel/keyboard.o kernel/tty.o kernel/console.o\
 			kernel/i8259.o kernel/global.o kernel/protect.o kernel/proc.o\
 			kernel/printf.o kernel/vsprintf.o\
-			lib/kliba.o lib/klib.o lib/string.o
+			kernel/systask.o\
+			lib/kliba.o lib/klib.o lib/string.o lib/misc.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -82,7 +83,7 @@ kernel/start.o: kernel/start.c include/type.h include/const.h include/protect.h 
 
 kernel/main.o: kernel/main.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
 			include/global.h
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
 
 kernel/clock.o: kernel/clock.c
 	$(CC) $(CFLAGS) -o $@ $<
@@ -108,8 +109,11 @@ kernel/protect.o: kernel/protect.c include/type.h include/const.h include/protec
 	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
 
 kernel/proc.o: kernel/proc.c
-	$(CC) $(CFLAGS) -o $@ $<
-
+	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
+	
+kernel/syscall.o : kernel/syscall.asm include/sconst.inc
+	$(ASM) $(ASMKFLAGS) -o $@ $<
+	
 kernel/printf.o: kernel/printf.c
 	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
 
@@ -119,6 +123,9 @@ kernel/vsprintf.o: kernel/vsprintf.c
 lib/klib.o: lib/klib.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
 			include/global.h
 	$(CC) $(CFLAGS) -fno-stack-protector -o $@ $<
+
+lib/misc.o: lib/misc.c
+	$(CC) $(CFLAGS) -o $@ $<
 
 lib/kliba.o : lib/kliba.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
