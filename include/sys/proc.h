@@ -36,6 +36,7 @@ struct proc {
 
         int ticks;                 /* remained ticks */
         int priority;
+        int run_count;
 
 	u32 pid;                   /* process id passed in from MM */
 	char name[16];		   /* name of the process */
@@ -70,7 +71,7 @@ struct proc {
 
 struct task {
 	task_f	initial_eip;
-	int	stacksize;
+	int	 stacksize;
 	char	name[32];
 };
 

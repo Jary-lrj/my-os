@@ -153,8 +153,14 @@ PRIVATE void init_fs()
 	assert(dd_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
 	send_recv(BOTH, dd_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 
-	/* make FS */
-	mkfs();
+	/* read the super block of ROOT DEVICE */
+	RD_SECT(ROOT_DEV, 1);
+
+	sb = (struct super_block *)fsbuf;
+	if (sb->magic != MAGIC_V1) {
+		printl("{FS} mkfs\n");
+		mkfs(); /* make FS */
+	}
 
 	/* load super block of ROOT */
 	read_super_block(ROOT_DEV);
@@ -163,6 +169,7 @@ PRIVATE void init_fs()
 	assert(sb->magic == MAGIC_V1);
 
 	root_inode = get_inode(ROOT_DEV, ROOT_INODE);
+
 }
 
 /*****************************************************************************
@@ -237,10 +244,10 @@ PRIVATE void mkfs()
 	/*       inode map      */
 	/************************/
 	memset(fsbuf, 0, SECTOR_SIZE);
-	for (i = 0; i < (NR_CONSOLES + 2); i++)
+	for (i = 0; i < (NR_CONSOLES + 3); i++)
 		fsbuf[0] |= 1 << i;
 
-	assert(fsbuf[0] == 0x1F);/* 0001 1111 : 
+	assert(fsbuf[0] == 0x11F);/* 0011 1111 : 
 				  *    | ||||
 				  *    | |||`--- bit 0 : reserved
 				  *    | ||`---- bit 1 : the first inode,
@@ -248,6 +255,7 @@ PRIVATE void mkfs()
 				  *    | |`----- bit 2 : /dev_tty0
 				  *    | `------ bit 3 : /dev_tty1
 				  *    `-------- bit 4 : /dev_tty2
+				  *              bit 4 : /dev_tty3
 				  */
 	WR_SECT(ROOT_DEV, 2);
 

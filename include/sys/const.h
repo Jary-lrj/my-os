@@ -45,7 +45,7 @@
 #define RECEIVING 0x04	/* set when proc trying to recv */
 
 /* TTY */
-#define NR_CONSOLES	3	/* consoles */
+#define NR_CONSOLES	4	/* consoles */
 
 /* 8259A interrupt controller ports. */
 #define	INT_M_CTL	0x20	/* I/O port for interrupt controller         <Master> */
@@ -122,6 +122,9 @@
 #define MAG_CH_PANIC	'\002'
 #define MAG_CH_ASSERT	'\003'
 
+
+#define	TRUE	1
+#define	FALSE	0
 /**
  * @enum msgtype
  * @brief MESSAGE types
